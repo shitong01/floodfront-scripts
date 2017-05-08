@@ -80,7 +80,7 @@ def main():
         marker_type_value.text = type_to_class(row[6])
         description = etree.SubElement(extended_data, "Data", name="description")
         description_value = etree.SubElement(description, "value")
-        description_value.text = str(row[7]) or "No description."
+        description_value.text = str(row[7] or "No description.")
         
     file_name = "markers.kml"
     if args.output is not None:
