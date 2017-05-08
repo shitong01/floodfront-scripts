@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from lxml import etree
+from time import gmtime, strftime
 import pg8000 as pg
 import argparse
 import re
@@ -10,7 +11,7 @@ def main():
     """
 
     parser = argparse.ArgumentParser(description=""" Export FloodFront marker data into KML format. """)
-    parser.add_argument('--after', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
+    parser.add_argument('--since', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
     parser.add_argument('-o', '--output', type=str, help=""" File output name. """)
 
     args = parser.parse_args()
@@ -27,6 +28,10 @@ def main():
     if args.after is not None:
         print "Searching for date {0}".format(args.after)
         query = query + "WHERE created >= '{0}'".format(args.after)
+    else:
+        now = strftime("%Y-%m-%d", gmtime())
+        print "Searching for date {0} (default today)".format(now)
+        query = query + "WHERE created >= '{0}'".format(now)
 
     cursor.execute(query)
     result = cursor.fetchall()

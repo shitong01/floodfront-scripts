@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from os import environ as env
+from time import gmtime, strftime
 import csv
 import pg8000 as pg
 import re
@@ -7,12 +8,14 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description=""" Export FloodFront marker data into CSV format. """)
-    parser.add_argument('--after', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
+    parser.add_argument('--since', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
     parser.add_argument('-o', '--output', type=str, help=""" File output name. """)
 
     args = parser.parse_args()
     if (args.after is not None) and (re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", args.after) is None):
         raise ValueError("Invalid date entered {0}. Date must be YYYY-MM-DD".format(args.after))
+
+        
 
     conn = pg.connect(user="ryan", database="floodfront")
     cursor = conn.cursor()
@@ -24,6 +27,11 @@ def main():
     if args.after is not None:
         print "Searching for date {0}".format(args.after)
         query = query + "WHERE created >= '{0}'".format(args.after)
+    else:
+        now = strftime("%Y-%m-%d", gmtime())
+        print "Searching for date {0} (default today)".format(now)
+        query = query + "WHERE created >= '{0}'".format(now)
+
 
     cursor.execute(query)
     result = cursor.fetchall()
