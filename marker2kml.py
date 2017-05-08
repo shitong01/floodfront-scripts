@@ -15,7 +15,7 @@ def main():
     parser.add_argument('-o', '--output', type=str, help=""" File output name. """)
 
     args = parser.parse_args()
-    if (re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", args.since) is None) and (args.since is not None):
+    if (args.since is not None) and (re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", args.since) is None):
         raise ValueError("Invalid date entered {0}. Date must be YYYY-MM-DD".format(args.since))
 
     conn = pg.connect(user="ryan", database="floodfront")
