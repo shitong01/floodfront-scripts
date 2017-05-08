@@ -11,12 +11,12 @@ def main():
     """
 
     parser = argparse.ArgumentParser(description=""" Export FloodFront marker data into KML format. """)
-    parser.add_argument('--since', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
+    parser.add_argument('--after', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
     parser.add_argument('-o', '--output', type=str, help=""" File output name. """)
 
     args = parser.parse_args()
-    if (re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", args.after) is None) and (args.after is not None):
-        raise ValueError("Invalid date entered {0}. Date must be YYYY-MM-DD".format(args.after))
+    if (re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", args.since) is None) and (args.since is not None):
+        raise ValueError("Invalid date entered {0}. Date must be YYYY-MM-DD".format(args.since))
 
     conn = pg.connect(user="ryan", database="floodfront")
     cursor = conn.cursor()
@@ -25,9 +25,9 @@ def main():
             FULL OUTER JOIN app_user 
             ON marker.user_id=app_user.id """
     
-    if args.after is not None:
-        print "Searching for date {0}".format(args.after)
-        query = query + "WHERE created >= '{0}'".format(args.after)
+    if args.since is not None:
+        print "Searching for date {0}".format(args.since)
+        query = query + "WHERE created >= '{0}'".format(args.since)
     else:
         now = strftime("%Y-%m-%d", gmtime())
         print "Searching for date {0} (default today)".format(now)
