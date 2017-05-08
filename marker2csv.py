@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from os import environ as env
 import csv
 import pg8000 as pg
@@ -36,8 +37,8 @@ def main():
     with open(filename, 'w') as csvfile:
         writer = csv.writer(csvfile, dialect='excel')
         for row in result:
-            if row[0] and row[1] and row[2] and row[3] and row[4] and row[5] and row[6] and (row[7] or "No description."):
-                writer.writerow([row[0], row[1], round(float(row[2]), 6), round(float(row[3]), 6), round(float(row[4]), 6), row[5].strftime("%Y-%m-%dT%H:%M:%S"), type_to_class(row[6])])
+            if row[0] and row[1] and row[2] and row[3] and row[4] and row[5] and row[6]:
+                writer.writerow([row[0], row[1], round(float(row[2]), 6), round(float(row[3]), 6), round(float(row[4]), 6), row[5].strftime("%Y-%m-%dT%H:%M:%S"), type_to_class(row[6]), (str(row[7] or "No description."))])
 
 def type_to_class(type):
     switch = {

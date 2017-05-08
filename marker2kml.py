@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from lxml import etree
 import pg8000 as pg
 import argparse
