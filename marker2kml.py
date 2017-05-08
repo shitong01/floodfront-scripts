@@ -11,7 +11,7 @@ def main():
     """
 
     parser = argparse.ArgumentParser(description=""" Export FloodFront marker data into KML format. """)
-    parser.add_argument('--after', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
+    parser.add_argument('--since', type=str, help=""" Narrow selection to markers after this date. YYYY-MM-DD """)
     parser.add_argument('-o', '--output', type=str, help=""" File output name. """)
 
     args = parser.parse_args()
