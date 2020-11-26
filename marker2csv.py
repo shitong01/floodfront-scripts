@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from builtins import str
 from os import environ as env
 from time import gmtime, strftime
 import csv
@@ -25,11 +27,11 @@ def main():
             ON marker.user_id=app_user.id """
     
     if args.since is not None:
-        print "Searching for date {0}".format(args.since)
+        print("Searching for date {0}".format(args.since))
         query = query + "WHERE created >= '{0}'".format(args.since)
     else:
         now = strftime("%Y-%m-%d", gmtime())
-        print "Searching for date {0} (default today)".format(now)
+        print("Searching for date {0} (default today)".format(now))
         query = query + "WHERE created >= '{0}'".format(now)
 
 
