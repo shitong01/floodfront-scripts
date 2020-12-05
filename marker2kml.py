@@ -1,9 +1,32 @@
 #!/usr/bin/env python
 from lxml import etree
 from time import gmtime, strftime
+from datetime import datetime
 import pg8000 as pg
 import argparse
 import re
+import configparser as conf
+import sqlite3 as sqlite
+import os
+import sys
+from django.conf import settings
+
+config = conf.ConfigParser()
+config.read('config.ini')
+if 'floodfront' not in config:
+    sys.stderr.write('Config not configured.')
+    exit(1)
+
+# Required for django.conf to find settings module of project
+sys.path.insert(0, config['floodfront']['ProjectPath'])
+os.environ['DJANGO_SETTINGS_MODULE'] = 'serverfloodfront.settings'
+db_username = config['floodfront']['User']
+db_connection_name = config['floodfront']['Database']
+
+# Print only in tty mode.
+def tty_print(msg):
+    if sys.stdout.isatty():
+        print(msg)
 
 def main():
     """
@@ -18,20 +41,28 @@ def main():
     if (args.since is not None) and (re.search("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", args.since) is None):
         raise ValueError("Invalid date entered {0}. Date must be YYYY-MM-DD".format(args.since))
 
-    conn = pg.connect(user="ryan", database="floodfront")
+    engine = settings.DATABASES['default']['ENGINE']
+    if engine == 'django.db.backends.sqlite3':
+        sqlite_db_file = os.path.join(config['floodfront']['ProjectPath'], 'db.sqlite3')
+        conn = sqlite.connect(sqlite_db_file)
+    elif engine == 'django.db.backdends.postgresql':
+        conn = pg.connect(user=db_username, database=db_connection_name)
+    else:
+        sys.stderr.write('Database engine {0} not supported'.format(engine))
+        exit(1)
+    tty_print('Using {0} engine.'.format(engine))
+
     cursor = conn.cursor()
-    query = """ SELECT marker.id, email, lat, lon, error_margin, created, marker_type, description
-            FROM marker 
-            FULL OUTER JOIN app_user 
-            ON marker.user_id=app_user.id """
+    query = """ SELECT id, email, lat, lon, accuracy, created_on, marker_type, description
+            FROM server_marker """
     
     if args.since is not None:
-        print "Searching for date {0}".format(args.since)
-        query = query + "WHERE created >= '{0}'".format(args.since)
+        tty_print("Searching for date {0}".format(args.since))
+        query = query + "WHERE created_on >= '{0}'".format(args.since)
     else:
         now = strftime("%Y-%m-%d", gmtime())
-        print "Searching for date {0} (default today)".format(now)
-        query = query + "WHERE created >= '{0}'".format(now)
+        tty_print("Searching for date {0} (default today)".format(now))
+        query = query + "WHERE created_on >= '{0}'".format(now)
 
     cursor.execute(query)
     result = cursor.fetchall()
@@ -52,7 +83,7 @@ def main():
     name.text = "markers"
 
     result = sorted(result, key=lambda row: row[5], reverse=True)
-#test
+
     for row in result:
         # print(row)
         if row[0] is None:
@@ -79,7 +110,14 @@ def main():
             error_margin_value.text = "-1"
         timestamp = etree.SubElement(extended_data, "Data", name="obsTime")
         timestamp_value = etree.SubElement(timestamp, "value")
-        timestamp_value.text = row[5].strftime("%Y-%m-%dT%H:%M:%S")
+        if engine == 'django.db.backends.sqlite3':
+            # Date type in sqlite are strings
+            timestamp_value.text = str(datetime.strptime(row[5], '%Y-%m-%d %H:%M:%S.%f'))
+        elif engine == 'django.db.backdends.postgresql':
+            timestamp_value.text = row[5].strftime("%Y-%m-%dT%H:%M:%S")
+        else:
+            sys.stdout.write("Unsupported engine: {0}".format(engine))
+            exit(1)
         marker_type = etree.SubElement(extended_data, "Data", name="markerType")
         marker_type_value = etree.SubElement(marker_type, "value")
         marker_type_value.text = type_to_class(row[6])
@@ -87,13 +125,19 @@ def main():
         description_value = etree.SubElement(description, "value")
         description_value.text = str(row[7] or "No description.")
         
-    file_name = "markers.kml"
-    if args.output is not None:
-        file_name = args.output + ".kml"
 
-    out_file = open(file_name, 'w')
-    out_file.write(etree.tostring(root, pretty_print=True, xml_declaration=True))
-    out_file.close()
+    if sys.stdout.isatty():
+        file_name = "markers.kml"
+        if args.output is not None:
+            file_name = args.output + ".kml"
+        else:
+            print('Using default name `markers.kml` for output file.')
+        # In Python 3, must specify "write binary" -- wb mode
+        out_file = open(file_name, 'wb')
+        out_file.write(etree.tostring(root, pretty_print=True, xml_declaration=True))
+        out_file.close()
+    else:
+        sys.stdout.buffer.write(etree.tostring(root, pretty_print=True, xml_declaration=True))
 
 def type_to_class(type):
     switch = {
