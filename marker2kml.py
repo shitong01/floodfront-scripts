@@ -92,7 +92,7 @@ def main():
         placemark = etree.SubElement(document, "Placemark")
         point = etree.SubElement(placemark, "Point")
         coords = etree.SubElement(point, "coordinates")
-        coords.text = "{0},{1}".format(round(float(row[2]), 6), round(float(row[3]), 6))
+        coords.text = "{0},{1}".format(round(float(row[3]), 6), round(float(row[2]), 6))
         # heading = etree.SubElement(placemark, "heading")
         # heading.text = str(row[3])
         extended_data = etree.SubElement(placemark, "ExtendedData")
